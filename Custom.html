@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personalisierte Countdown-Timer</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+  #new-timer {
+    margin-bottom: 20px;
+  }
+  .timer {
+    font-size: 24px;
+    margin: 10px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Erstelle deinen eigenen Timer</h1>
+<div id="new-timer">
+  <input type="text" id="title" placeholder="Titel" required>
+  <input type="datetime-local" id="datetime" required>
+  <button onclick="createTimer()">Timer erstellen</button>
+</div>
+
+<h2>Gespeicherte Timer</h2>
+<div id="timers"></div>
+
+<script>
+// Lade Timer aus dem LocalStorage
+function loadTimers() {
+  let timers = JSON.parse(localStorage.getItem('timers')) || [];
+  return timers;
+}
+
+// Speichere Timer im LocalStorage
+function saveTimers(timers) {
+  localStorage.setItem('timers', JSON.stringify(timers));
+}
+
+// Erstelle einen neuen Timer
+function createTimer() {
+  let title = document.getElementById('title').value;
+  let datetime = document.getElementById('datetime').value;
+  if (!title || !datetime) {
+    alert('Bitte füllen Sie alle Felder aus.');
+    return;
+  }
+
+  let timers = loadTimers();
+  timers.push({ title: title, datetime: datetime });
+  saveTimers(timers);
+
+  displayTimers();
+}
+
+// Zeige alle Timer an
+function displayTimers() {
+  let timers = loadTimers();
+  let timersDiv = document.getElementById('timers');
+  timersDiv.innerHTML = '';
+
+  timers.forEach((timer, index) => {
+    let timerDiv = document.createElement('div');
+    timerDiv.classList.add('timer');
+    timerDiv.setAttribute('data-index', index);
+    timerDiv.innerHTML = `
+      <h3>${timer.title}</h3>
+      <div id="countdown-${index}"></div>
+      <button onclick="deleteTimer(${index})">Löschen</button>
+    `;
+    timersDiv.appendChild(timerDiv);
+
+    // Initialisiere den Countdown
+    startCountdown(timer.datetime, `countdown-${index}`);
+  });
+}
+
+// Lösche einen Timer
+function deleteTimer(index) {
+  let timers = loadTimers();
+  timers.splice(index, 1);
+  saveTimers(timers);
+  displayTimers();
+}
+
+// Starte den Countdown für ein gegebenes Datum/Zeit
+function startCountdown(datetime, elementId) {
+  let countDownDate = new Date(datetime).getTime();
+  let x = setInterval(function() {
+    let now = new Date().getTime();
+    let distance = countDownDate - now;
+
+    let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    document.getElementById(elementId).innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+
+    if (distance < 0) {
+      clearInterval(x);
+      document.getElementById(elementId).innerHTML = "ABGELAUFEN";
+    }
+  }, 1000);
+}
+
+// Initiales Laden
+displayTimers();
+</script>
+
+</body>
+</html>
