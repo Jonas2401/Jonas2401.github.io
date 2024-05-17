@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personalisierte Countdown-Timer</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+  #new-timer {
+    margin-bottom: 20px;
+  }
+  .timer {
+    font-size: 24px;
+    margin: 10px 0;
+  }
+  #header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .hide {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <label>
+    <input type="checkbox" id="toggleDisplay" onchange="toggleDisplay()"> Erstellungsformular und Löschen ausblenden
+  </label>
+</div>
+
+<div id="new-timer">
+  <input type="text" id="title" placeholder="Titel" required>
+  <input type="datetime-local" id="datetime" required>
+  <button onclick="createTimer()">Timer erstellen</button>
+</div>
+
+<h2 id="saved-timers-title">Gespeicherte Timer</h2>
+<div id="timers"></div>
+
+<script>
+// Lade Timer aus dem LocalStorage
+function loadTimers() {
+  let timers = JSON.parse(localStorage.getItem('timers')) || [];
+  return timers;
+}
+
+// Speichere Timer im LocalStorage
+function saveTimers(timers) {
+  localStorage.setItem('timers', JSON.stringify(timers));
+}
+
+// Lade den Zustand der Checkbox
+function loadCheckboxState() {
+  return JSON.parse(localStorage.getItem('checkboxState')) || false;
+}
+
+// Speichere den Zustand der Checkbox
+function saveCheckboxState(state) {
+  localStorage.setItem('checkboxState', JSON.stringify(state));
+}
+
+// Erstelle einen neuen Timer
+function createTimer() {
+  let title = document.getElementById('title').value;
+  let datetime = document.getElementById('datetime').value;
+  if (!title || !datetime) {
+    alert('Bitte füllen Sie alle Felder aus.');
+    return;
+  }
+
+  let timers = loadTimers();
+  timers.push({ title: title, datetime: datetime });
+  saveTimers(timers);
+
+  displayTimers();
+}
+
+// Zeige alle Timer an
+function displayTimers() {
+  let timers = loadTimers();
+  let timersDiv = document.getElementById('timers');
+  timersDiv.innerHTML = '';
+
+  timers.forEach((timer, index) => {
+    let timerDiv = document.createElement('div');
+    timerDiv.classList.add('timer');
+    timerDiv.setAttribute('data-index', index);
+    timerDiv.innerHTML = `
+      <h3>${timer.title}</h3>
+      <div id="countdown-${index}"></div>
+      <button onclick="deleteTimer(${index})" class="delete-button">Löschen</button>
+    `;
+    timersDiv.appendChild(timerDiv);
+
+    // Initialisiere den Countdown
+    startCountdown(timer.datetime, `countdown-${index}`);
+  });
+}
+
+// Lösche einen Timer
+function deleteTimer(index) {
+  let timers = loadTimers();
+  timers.splice(index, 1);
+  saveTimers(timers);
+  displayTimers();
+}
+
+// Starte den Countdown für ein gegebenes Datum/Zeit
+function startCountdown(datetime, elementId) {
+  let countDownDate = new Date(datetime).getTime();
+  let x = setInterval(function() {
+    let now = new Date().getTime();
+    let distance = countDownDate - now;
+
+    let days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    document.getElementById(elementId).innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+
+    if (distance < 0) {
+      clearInterval(x);
+      document.getElementById(elementId).innerHTML = "ABGELAUFEN";
+    }
+  }, 1000);
+}
+
+// Initiales Laden
+function initialize() {
+  displayTimers();
+  let checkboxState = loadCheckboxState();
+  document.getElementById('toggleDisplay').checked = checkboxState;
+  toggleDisplay(checkboxState);
+}
+
+// Zeige oder verberge die Elemente basierend auf der Checkbox
+function toggleDisplay(state) {
+  if (typeof state !== 'boolean') {
+    state = document.getElementById('toggleDisplay').checked;
+  }
+  saveCheckboxState(state);
+
+  let newTimerDiv = document.getElementById('new-timer');
+  let savedTimersTitle = document.getElementById('saved-timers-title');
+  let deleteButtons = document.querySelectorAll('.delete-button');
+
+  if (state) {
+    newTimerDiv.classList.add('hide');
+    savedTimersTitle.classList.add('hide');
+    deleteButtons.forEach(button => button.classList.add('hide'));
+  } else {
+    newTimerDiv.classList.remove('hide');
+    savedTimersTitle.classList.remove('hide');
+    deleteButtons.forEach(button => button.classList.remove('hide'));
+  }
+}
+
+initialize();
+</script>
+
+</body>
+</html>
