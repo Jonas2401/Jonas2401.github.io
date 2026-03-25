@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Countdown List Ebner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    background: #f5f5f5;
+    color: #222;
+  }
+
+  /* Hessen-style header */
+  .header {
+    background: #c8102e;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .header img {
+    height: 50px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+  }
+
+  .builder {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+  }
+
+  .builder input {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+
+  .builder button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    background: #c8102e;
+    color: white;
+    cursor: pointer;
+  }
+
+  .link-output {
+    margin-top: 10px;
+    font-size: 14px;
+    word-break: break-all;
+  }
+
+  .timers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .timer {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+  }
+
+  .timer h2 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #c8102e;
+  }
+
+  .countdown {
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .expired {
+    color: red;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Coat_of_arms_of_Hesse.svg/120px-Coat_of_arms_of_Hesse.svg.png" alt="Hessenzeichen">
+  <h1>Countdown-Liste Ebner</h1>
+</div>
+
+<div class="container">
+
+  <div class="builder">
+    <h3>Link Builder</h3>
+    <input type="text" id="title" placeholder="Titel">
+    <input type="datetime-local" id="date">
+    <button onclick="addTimerParam()">Hinzufügen</button>
+    <button onclick="generateLink()">Link generieren</button>
+    <div class="link-output" id="output"></div>
+  </div>
+
+  <div class="timers" id="timers"></div>
+
+</div>
+
+<script>
+let paramsList = [];
+
+function addTimerParam() {
+  const title = document.getElementById('title').value;
+  const date = document.getElementById('date').value;
+
+  if (!title || !date) {
+    alert('Bitte ausfüllen');
+    return;
+  }
+
+  paramsList.push({ title, date });
+  document.getElementById('title').value = '';
+  document.getElementById('date').value = '';
+}
+
+function generateLink() {
+  if (paramsList.length === 0) return;
+
+  const base = window.location.origin + window.location.pathname;
+  const query = paramsList.map(t => `t=${encodeURIComponent(t.title)}|${encodeURIComponent(t.date)}`).join('&');
+
+  const full = `${base}?${query}`;
+  document.getElementById('output').textContent = full;
+}
+
+function parseTimers() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const timers = [];
+
+  urlParams.forEach((value, key) => {
+    if (key === 't') {
+      const [title, date] = value.split('|');
+      timers.push({ title: decodeURIComponent(title), date: decodeURIComponent(date) });
+    }
+  });
+
+  return timers;
+}
+
+function startCountdown(timer, container) {
+  const titleEl = document.createElement('h2');
+  titleEl.textContent = timer.title;
+
+  const countdownEl = document.createElement('div');
+  countdownEl.className = 'countdown';
+
+  container.appendChild(titleEl);
+  container.appendChild(countdownEl);
+
+  const target = new Date(timer.date).getTime();
+
+  const interval = setInterval(() => {
+    const now = new Date().getTime();
+    const distance = target - now;
+
+    if (distance <= 0) {
+      clearInterval(interval);
+      countdownEl.textContent = 'ABGELAUFEN';
+      countdownEl.classList.add('expired');
+      return;
+    }
+
+    const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const h = Math.floor((distance / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((distance / (1000 * 60)) % 60);
+    const s = Math.floor((distance / 1000) % 60);
+
+    countdownEl.textContent = `${d}d ${h}h ${m}m ${s}s`;
+  }, 1000);
+}
+
+function init() {
+  const timers = parseTimers();
+  const container = document.getElementById('timers');
+
+  timers.forEach(timer => {
+    const div = document.createElement('div');
+    div.className = 'timer';
+    container.appendChild(div);
+    startCountdown(timer, div);
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
